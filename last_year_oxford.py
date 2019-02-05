@@ -137,7 +137,7 @@ for n in n_value_array:
     # --------------- Training for Additive---------------
     for iter in range(num_epoch):
         layer_1 = X.dot(w1_additive)
-        layer_1_act = ReLu(layer_1)
+        layer_1_act = tanh(layer_1)
 
         layer_2 = layer_1_act.dot(w2_additive)
         layer_2_act = sigmoid(layer_2)
@@ -170,7 +170,7 @@ for n in n_value_array:
         grad_2 = dz2_dW2.T.dot(dl_dz2)
 
         dl_da1 = (dl_dz2).dot(w2_additive.T)
-        da1_dz1 = d_ReLu(layer_1)
+        da1_dz1 = d_tanh(layer_1)
         dl_dz1 = dl_da1 * da1_dz1
         dz1_dW1 = X
         grad_1 = dz1_dW1.T.dot(dl_dz1)
