@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import signal
 
-# np.random.seed(598765)
+np.random.seed(598765)
 
 
 def tanh(x):
@@ -66,8 +66,9 @@ number_mask = w1.shape[0]
 
 # 1. Declare hyper Parameters
 num_epoch = 1000
-learning_rate = 0.2
-c_value = [0.2*i for i in range(15)]
+learning_rate = 0.1
+c_value = [0.2*i for i in range(16)]
+d_value = list(range(1,6))
 cost_before_train = 0
 cost_after_train = 0
 # final_out, start_out = np.array([[]]), np.array([[]])
@@ -88,8 +89,8 @@ for i in range(len(train_X)):
 
 # ----- TRAINING -------
 for iter in range(num_epoch):
-    if iter%300==0:
-        learning_rate = learning_rate *0.5
+    if iter%500==0:
+        learning_rate = learning_rate * 0.5
     # print("------------iteration:", iter, "-----------")
     for i in range(len(train_X)):
         for j in range(number_mask):
