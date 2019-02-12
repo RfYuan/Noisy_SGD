@@ -3,6 +3,7 @@ import time
 import math
 from scipy import signal
 
+
 # np.random.seed(13579)
 
 
@@ -93,24 +94,8 @@ cost_before_train = 0
 cost_after_train = 0
 
 
-# final_out, start_out = np.array([[]]), np.array([[]])
-
-# ---- Cost before training ------
-# for i in range(len(train_X)):
-#     for j in range(number_mask):
-#         layer_1[:, :, j] = signal.convolve2d(train_X[i], w1[:, :, j], mode='same')[::2,::2]
-#     layer_1_act = sigmoid(layer_1)
-#
-#     layer_1_act_vec = np.expand_dims(np.reshape(layer_1_act, -1), axis=0)
-#
-#     layer_2 = layer_1_act_vec.dot(w2)
-#     layer_2_act = softmax(layer_2)
-#     cost = np.square(layer_2_act - train_y[i]).sum() * 0.5
-#     cost_before_train = cost_before_train + cost
-# start_out = np.append(start_out, layer_2_act)
-
-def train_convolutional_network(train_X=train_X, train_y=train_y, noise="NEM noise", learning_rate_=0.1,
-                                num_epoch=10, w1_=w1, w2_=w2, layer_1=layer_1,
+def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="NEM noise", learning_rate_=0.1,
+                                num_epoch=350, w1_=w1, w2_=w2, layer_1=layer_1,
                                 c=0.5, d=5):
     # ----- TRAINING -------
     print("start training--------------")
@@ -123,27 +108,28 @@ def train_convolutional_network(train_X=train_X, train_y=train_y, noise="NEM noi
             for j in range(number_mask):
                 layer_1[:, :, j] = signal.convolve2d(train_X[i], w1_[:, :, j], mode='same')[::2, ::2]
             layer_1_act = sigmoid(layer_1)
-
             layer_1_act_vec = np.expand_dims(np.reshape(layer_1_act, -1), axis=0)
 
             layer_2 = layer_1_act_vec.dot(w2_)
             layer_2_act = softmax(layer_2)
+            
             # adding noise
-            new_y = train_y[i]
+            # new_y = train_y[i]
             if noise == "NEM noise":
-                c_t_d = 0.5 * math.sqrt(c / ((i +1 + train_size_ *r ) ** d))
+                c_t_d = 0.5 * math.sqrt(c / ((i + 1 + train_size_ * r) ** d))
                 uniform_noise = np.random.uniform(-c_t_d, c_t_d, (1, 10))
-                if uniform_noise.dot(np.log(layer_2_act).T) >0:
-                    new_y = train_y[i] + uniform_noise
-
-            grad_2_part_1 = layer_2_act - new_y
-            # grad_2_part_2 = d_sigmoid(layer_2)
+                if uniform_noise.dot(np.log(layer_2_act).T) > 0:
+                    # new_y = train_y[i] + uniform_noise
+                    train_y[i] = train_y[i] + uniform_noise
+            #
+            # grad_2_part_1 = layer_2_act - new_y
+            grad_2_part_1 = layer_2_act - train_y[i]
             grad_2_part_2 = softmax_grad(layer_2_act)
             grad_2_part_3 = layer_1_act_vec
             grad_2 = grad_2_part_3.T.dot(grad_2_part_1.dot(grad_2_part_2))
 
             grad_1_part_1 = (grad_2_part_1.dot(grad_2_part_2)).dot(w2.T)
-            grad_1_part_2 = d_tanh(layer_1)
+            grad_1_part_2 = d_sigmoid(layer_1)
             grad_1_part_3 = train_X[i]
 
             # print("1--",grad_1_part_1.shape, "  2--", grad_1_part_2.shape, "  3--", grad_1_part_3.shape)
@@ -170,14 +156,15 @@ def train_convolutional_network(train_X=train_X, train_y=train_y, noise="NEM noi
 
 
 start_time = time.time()
-w1, w2 = train_convolutional_network()
 w1_without_noise, w2_without_noise = train_convolutional_network(noise="None")
+w1, w2 = train_convolutional_network()
 print("running time:", round(time.time() - start_time, 2))
 
-def train_set_error_rate ( w1_ = w1, w2_ = w2, train_X_ = train_X, train_y_ = train_y, layer_1 = layer_1):
+
+def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, layer_1=layer_1):
     count_error = 0
     # ---- Cost after training ------
-    for i in range(len(train_X)):
+    for i in range(len(train_X_)):
         for j in range(number_mask):
             layer_1[:, :, j] = signal.convolve2d(train_X[i], w1_[:, :, j], mode='same')[::2, ::2]
         layer_1_act = sigmoid(layer_1)
@@ -187,20 +174,21 @@ def train_set_error_rate ( w1_ = w1, w2_ = w2, train_X_ = train_X, train_y_ = tr
         layer_2_act = softmax(layer_2)
         # if i % 100 == 0:
         #     print("different of the ", i, "th training sample:", np.round(layer_2_act - train_y[i], decimals=2), "   ")
-        count_error += np.argmax(layer_2_act) != np.argmax(train_y[i])
-        cost = np.square(layer_2_act - train_y[i]).sum() * 0.5
-    error_rate = count_error / len(train_y)
+        count_error += np.argmax(layer_2_act) != np.argmax(train_y_[i])
+        cost = np.square(layer_2_act - train_y_[i]).sum() * 0.5
+    error_rate = count_error / len(train_y_)
     return error_rate
+
+
 # ----- Print Results ---
 # print("\nW1 :", w1, "\n\nw2 :", w2)
 print("----------------")
-error_with_noise = train_set_error_rate(w1_ = w1, w2_ = w2)
-error_no_noise = train_set_error_rate(w1_ = w1_without_noise, w2_ = w2_without_noise)
+error_with_noise = train_set_error_rate(w1_=w1, w2_=w2)
+error_no_noise = train_set_error_rate(w1_=w1_without_noise, w2_=w2_without_noise)
 
 print("error with noise: ", error_with_noise)
 print("error without noise: ", error_no_noise)
 
-print("Cost after Training: ", cost_after_train)
 print("----------------")
 # print("Start Out put : ", start_out)
 # print("Final Out put : ", final_out)
