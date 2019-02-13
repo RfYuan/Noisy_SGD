@@ -2,6 +2,7 @@ import numpy as np
 import time
 import math
 from scipy import signal
+import matplotlib.pyplot as plt
 
 
 # np.random.seed(13579)
@@ -51,11 +52,11 @@ def loadMNIST(prefix, folder):
     intType = np.dtype('int32').newbyteorder('>')
     nMetaDataBytes = 4 * intType.itemsize
 
-    data = np.fromfile(folder + "/" + prefix + '-images.idx3-ubyte', dtype='ubyte')
+    data = np.fromfile(folder + "/" + prefix + '-images-idx3-ubyte', dtype='ubyte')
     magicBytes, nImages, width, height = np.frombuffer(data[:nMetaDataBytes].tobytes(), intType)
     data = data[nMetaDataBytes:].astype(dtype='float32').reshape([nImages, width, height])
 
-    labels = np.fromfile(folder + "/" + prefix + '-labels.idx1-ubyte',
+    labels = np.fromfile(folder + "/" + prefix + '-labels-idx1-ubyte',
                          dtype='ubyte')[2 * intType.itemsize:]
     return data, labels
 
@@ -86,8 +87,8 @@ number_mask = w1.shape[0]
 layer_1 = np.zeros((14, 14, 3))
 
 # 1. Declare hyper Parameters
-num_epoch = 100
-learning_rate = 0.7
+num_epoch = 200
+learning_rate = 1
 c_value = [0.2 * i for i in range(16)]
 d_value = list(range(1, 6))
 cost_before_train = 0
@@ -95,12 +96,13 @@ cost_after_train = 0
 
 
 def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="NEM noise", learning_rate_=0.1,
-                                num_epoch=350, w1_=w1, w2_=w2, layer_1=layer_1,
+                                num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,
                                 c=0.5, d=5):
     # ----- TRAINING -------
     print("start training--------------")
+    error_list = []
     train_size_ = len(train_X)
-    for r in range(num_epoch):
+    for r in range(num_epoch_):
         if r % 700 == 0:
             learning_rate_ = learning_rate_ * 0.5
         # print("------------iteration:", iter, "-----------")
@@ -112,6 +114,8 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
 
             layer_2 = layer_1_act_vec.dot(w2_)
             layer_2_act = softmax(layer_2)
+            
+            
             
             # adding noise
             # new_y = train_y[i]
@@ -131,7 +135,7 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
             grad_1_part_1 = (grad_2_part_1.dot(grad_2_part_2)).dot(w2.T)
             grad_1_part_2 = d_sigmoid(layer_1)
             grad_1_part_3 = train_X[i]
-
+            
             # print("1--",grad_1_part_1.shape, "  2--", grad_1_part_2.shape, "  3--", grad_1_part_3.shape)
 
             grad_1_part_1_reshape = np.reshape(grad_1_part_1, (14, 14, 3))
@@ -152,12 +156,14 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
             #     print("grad1  norm:",np.sum(grad_1), "       grad2 norm", np.sum(grad_2))
             w2_ = w2_ - grad_2 * learning_rate_
             w1_ = w1_ - grad_1 * learning_rate_
-    return w1_, w2_
+        error_list.append(train_set_error_rate(w1_=w1_, w2_ = w2_))
+        
+    return w1_, w2_,error_list
 
 
 start_time = time.time()
-w1_without_noise, w2_without_noise = train_convolutional_network(noise="None")
-w1, w2 = train_convolutional_network()
+w1_without_noise, w2_without_noise, error_no_noise = train_convolutional_network(noise="None")
+w1, w2, error_noise = train_convolutional_network()
 print("running time:", round(time.time() - start_time, 2))
 
 
@@ -175,11 +181,14 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
         # if i % 100 == 0:
         #     print("different of the ", i, "th training sample:", np.round(layer_2_act - train_y[i], decimals=2), "   ")
         count_error += np.argmax(layer_2_act) != np.argmax(train_y_[i])
-        cost = np.square(layer_2_act - train_y_[i]).sum() * 0.5
     error_rate = count_error / len(train_y_)
     return error_rate
 
 
+plt.plot(range(num_epoch), error_no_noise, marker = 'o', label = "No Noise")
+plt.plot(range(num_epoch), error_noise, marker = '', label = "Noisy")
+plt.legend()
+plt.show()
 # ----- Print Results ---
 # print("\nW1 :", w1, "\n\nw2 :", w2)
 print("----------------")
