@@ -5,6 +5,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 import skimage.measure
 
+
 # np.random.seed(13579)
 
 
@@ -86,7 +87,6 @@ w2 = np.random.randn(14 * 14 * 3, 10)
 number_mask = w1.shape[0]
 layer_1 = np.zeros((28, 28, 3))
 
-
 # 1. Declare hyper Parameters
 num_epoch = 20
 learning_rate = 1
@@ -96,7 +96,7 @@ d_value = list(range(1, 6))
 # cost_after_train = 0
 
 
-def train_set_error_rate(w1_=w1, w2_=w2,train_X_=train_X, train_y_=train_y, layer_1=layer_1 ):
+def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, layer_1=layer_1):
     count_error = 0
     # ---- Cost after training ------
     for i in range(len(train_X_)):
@@ -104,7 +104,7 @@ def train_set_error_rate(w1_=w1, w2_=w2,train_X_=train_X, train_y_=train_y, laye
             layer_1[:, :, j] = signal.convolve2d(train_X[i], w1_[:, :, j], mode='same')
         layer_1_act = sigmoid(layer_1)
 
-        layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2,1), func=np.mean)
+        layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2, 1), func=np.mean)
         layer_1_pooled_vec = np.expand_dims(np.reshape(layer_1_pooled, -1), axis=0)
 
         layer_2 = layer_1_pooled_vec.dot(w2_)
@@ -134,7 +134,7 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
                 layer_1[:, :, j] = signal.convolve2d(train_X[i], w1_[:, :, j], mode='same')
             layer_1_act = sigmoid(layer_1)
 
-            layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2, 1), func=np.mean)
+            layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2, 1), func=np.max)
             layer_1_pooled_vec = np.expand_dims(np.reshape(layer_1_pooled, -1), axis=0)
 
             layer_2 = layer_1_pooled_vec.dot(w2_)
@@ -156,16 +156,15 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
             grad_2 = grad_2_part_3.T.dot(grad_2_part_1.dot(grad_2_part_2))
 
             # differentiation from before
-            grad_1_part_1_temp = np.reshape((grad_2_part_1.dot(grad_2_part_2)).dot(w2_.T), (14,14,3))
-            grad_1_window = grad_1_part_1_temp.repeat(2, axis=0).repeat(2,axis=1)       #expand dimension for pool
-            grad_1_mask = np.full((28,28,3), 0.25, dtype=float)
-
-            grad_1_part_1 = grad_1_window * grad_1_mask                                 # shape = (28,28,3)
+            grad_1_part_1_temp = np.reshape((grad_2_part_1.dot(grad_2_part_2)).dot(w2_.T), (14, 14, 3))
+            grad_1_window = grad_1_part_1_temp.repeat(2, axis=0).repeat(2, axis=1)  # expand dimension for pool
+            # grad_1_mask = np.full((28,28,3), 0.25, dtype=float)
+            grad_1_mask = np.equal(layer_1_act, layer_1_pooled.repeat(2, axis=0).repeat(2, axis=1)).astype(int)
+            grad_1_part_1 = grad_1_window * grad_1_mask  # shape = (28,28,3)
             grad_1_part_2 = d_sigmoid(layer_1)
 
             grad_1_part_3 = np.zeros((30, 30))
             grad_1_part_3[1:29, 1:29] = train_X[i]
-
 
             # print("1--",grad_1_part_1.shape, "  2--", grad_1_part_2.shape, "  3--", grad_1_part_3.shape)
 
@@ -175,7 +174,7 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
 
             for j in range(number_mask):
                 grad_1[:, :, j] = np.rot90(
-                    signal.convolve2d(grad_1_part_3, np.rot90(temp[:,:,j], 2), mode='valid'),
+                    signal.convolve2d(grad_1_part_3, np.rot90(temp[:, :, j], 2), mode='valid'),
                     2)
             # if (i % 100 == 0)and(iter %10 ==0)and(iter>0):
             #     print("grad1  norm:",np.sum(grad_1), "       grad2 norm", np.sum(grad_2))
@@ -190,20 +189,21 @@ start_time = time.time()
 noisy_error_history = [0] * num_epoch
 noiseless_error_history = [0] * num_epoch
 
-for i in range(1):
+for i in range(3):
     w1_without_noise, w2_without_noise, error_noiseless = train_convolutional_network(noise="None")
     w1, w2, error_noisy = train_convolutional_network()
     noisy_error_history = [a + b for a, b in zip(noisy_error_history, error_noisy)]
     noiseless_error_history = [a + b for a, b in zip(noiseless_error_history, error_noiseless)]
-noisy_error_history = [a/20 for a in noisy_error_history]
-noiseless_error_history = [a/20 for a in noiseless_error_history]
+noisy_error_history = [a / 20 for a in noisy_error_history]
+noiseless_error_history = [a / 20 for a in noiseless_error_history]
 
 print("running time:", round(time.time() - start_time, 2))
 
-plt.plot(range(1,num_epoch+1), noisy_error_history, marker='', color='blue', label="Noisy")
-plt.plot(range(1,num_epoch+1), noiseless_error_history, marker='', color='red', label="No Noise")
+plt.plot(range(1, num_epoch + 1), noisy_error_history, marker='', color='blue', label="Noisy")
+plt.plot(range(1, num_epoch + 1), noiseless_error_history, marker='', color='red', label="No Noise")
 plt.legend()
 plt.show()
+'''
 # ----- Print Results ---
 # print("\nW1 :", w1, "\n\nw2 :", w2)
 print("----------------")
@@ -219,3 +219,4 @@ print("----------------")
 # print("Ground Truth  : ", train_y.T)
 
 # -- end code --
+'''
