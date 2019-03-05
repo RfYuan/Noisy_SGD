@@ -88,8 +88,8 @@ number_mask = w1.shape[0]
 layer_1 = np.zeros((28, 28, 3))
 
 # 1. Declare hyper Parameters
-num_epoch = 20
-learning_rate = 1
+num_epoch = 100
+learning_rate = 0.2
 c_value = [0.2 * i for i in range(16)]
 d_value = list(range(1, 6))
 # cost_before_train = 0
@@ -104,22 +104,20 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
             layer_1[:, :, j] = signal.convolve2d(train_X[i], w1_[:, :, j], mode='same')
         layer_1_act = sigmoid(layer_1)
 
-        layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2, 1), func=np.mean)
+        layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2, 1), func=np.max)
         layer_1_pooled_vec = np.expand_dims(np.reshape(layer_1_pooled, -1), axis=0)
 
         layer_2 = layer_1_pooled_vec.dot(w2_)
         layer_2_act = softmax(layer_2)
         # if i % 100 == 0:
-        #     print("different of the ", i, "th training sample:", np.round(layer_2_act - train_y[i], decimals=2), "   ")
+        # print("different of the ", i, "th training sample:", np.round(layer_2_act - train_y[i], decimals=2), "   ")
         count_error += np.argmax(layer_2_act) != np.argmax(train_y_[i])
     error_rate = count_error / len(train_y_)
     return error_rate
 
 
-print("start training--------------")
-
-
-def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="NEM noise", learning_rate_=0.1,
+def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="NEM noise",
+                                learning_rate_=learning_rate,
                                 num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,
                                 c=0.5, d=5):
     # ----- TRAINING -------
@@ -185,24 +183,30 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
     return w1_, w2_, error_list
 
 
-start_time = time.time()
 noisy_error_history = [0] * num_epoch
 noiseless_error_history = [0] * num_epoch
 
-for i in range(3):
-    w1_without_noise, w2_without_noise, error_noiseless = train_convolutional_network(noise="None")
-    w1, w2, error_noisy = train_convolutional_network()
-    noisy_error_history = [a + b for a, b in zip(noisy_error_history, error_noisy)]
-    noiseless_error_history = [a + b for a, b in zip(noiseless_error_history, error_noiseless)]
-noisy_error_history = [a / 20 for a in noisy_error_history]
-noiseless_error_history = [a / 20 for a in noiseless_error_history]
+for k in range(1):
+    print("start training--------------")
+    start_time = time.time()
 
-print("running time:", round(time.time() - start_time, 2))
+    for i in range(20):
+        w1_without_noise, w2_without_noise, error_noiseless = train_convolutional_network(noise="None")
+        w1, w2, error_noisy = train_convolutional_network()
+        noisy_error_history = [a + b for a, b in zip(noisy_error_history, error_noisy)]
+        noiseless_error_history = [a + b for a, b in zip(noiseless_error_history, error_noiseless)]
+    noisy_error_history = [a / 20 for a in noisy_error_history]
+    noiseless_error_history = [a / 20 for a in noiseless_error_history]
 
-plt.plot(range(1, num_epoch + 1), noisy_error_history, marker='', color='blue', label="Noisy")
-plt.plot(range(1, num_epoch + 1), noiseless_error_history, marker='', color='red', label="No Noise")
-plt.legend()
-plt.show()
+    print("running time:", round(time.time() - start_time, 2))
+
+    plt.plot(range(1, num_epoch + 1), noisy_error_history, marker='', color='blue', label="Noisy")
+    plt.plot(range(1, num_epoch + 1), noiseless_error_history, marker='', color='red', label="No Noise")
+    plt.legend()
+    plt.savefig("epoch100_" + str(k) + ".png")
+    plt.clf()
+    # plt.show()
+
 '''
 # ----- Print Results ---
 # print("\nW1 :", w1, "\n\nw2 :", w2)
