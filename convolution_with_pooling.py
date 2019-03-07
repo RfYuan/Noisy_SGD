@@ -64,7 +64,7 @@ def loadMNIST(prefix, folder):
 
 def mnist_data():
     trainingImages, trainingLabels = loadMNIST("train", ".")
-    testImages, testLabels = loadMNIST("t10k", ".")
+    # testImages, testLabels = loadMNIST("t10k", ".")
     return trainingImages, trainingLabels
 
 
@@ -89,7 +89,7 @@ layer_1 = np.zeros((28, 28, 3))
 
 # 1. Declare hyper Parameters
 num_epoch = 100
-learning_rate = 0.2
+learning_rate = 0.3
 c_value = [0.2 * i for i in range(16)]
 d_value = list(range(1, 6))
 # cost_before_train = 0
@@ -186,7 +186,7 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
 noisy_error_history = [0] * num_epoch
 noiseless_error_history = [0] * num_epoch
 
-for k in range(1):
+for k in range(10):
     print("start training--------------")
     start_time = time.time()
 
