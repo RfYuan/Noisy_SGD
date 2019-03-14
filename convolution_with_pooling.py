@@ -96,6 +96,12 @@ num_epoch = 100
 learning_rate = float(sys.argv[1])
 ind1 = int(sys.argv[2])
 ind2 = int(sys.argv[3])
+noise_types = { 'G':'Gaussian', 'U':'Uniform', 'None':'None'}
+noise = 'None'
+try:
+    noise = noise_types[str(sys.argv[4])]
+except Exception as e:
+    noise = 'None'
 c_value = [0.2 * i for i in range(16)]
 d_value = list(range(1, 6))
 # cost_before_train = 0
@@ -122,7 +128,7 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
     return error_rate
 
 
-def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="NEM noise",
+def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise_='None',
                                 learning_rate_=learning_rate,
                                 num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,        
                  	c=c_value[ind1], d=d_value[ind2]):
@@ -145,16 +151,22 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
             layer_2_act = softmax(layer_2)
 
             # adding noise
-            # new_y = train_y[i]
-            if noise == "NEM noise":
+            new_y = train_y[i]
+            if noise_ == "Uniform":
                 c_t_d = 0.5 * math.sqrt(c / ((i + 1 + train_size_ * r) ** d))
                 uniform_noise = np.random.uniform(-c_t_d, c_t_d, (1, 10))
                 if uniform_noise.dot(np.log(layer_2_act).T) > 0:
-                    # new_y = train_y[i] + uniform_noise
-                    train_y[i] = train_y[i] + uniform_noise
-            #
-            # grad_2_part_1 = layer_2_act - new_y
-            grad_2_part_1 = layer_2_act - train_y[i]
+                    new_y = train_y[i] + uniform_noise
+                    # train_y[i] = train_y[i] + uniform_noise
+            elif noise == "Gaussian":
+                variance = math.sqrt(c / ((i + 1 + train_size_ * r) ** d *12 ))
+                gaussian_noise = np.random.normal(0, variance, (1,10))
+                if gaussian_noise.dot(np.log(layer_2_act).T) > 0:
+                    new_y = train_y[i] + gaussian_noise
+                    # train_y[i] = train_y[i] + uniform_noise
+
+            grad_2_part_1 = layer_2_act - new_y
+            # grad_2_part_1 = layer_2_act - train_y[i]
             grad_2_part_2 = softmax_grad(layer_2_act)
             grad_2_part_3 = layer_1_pooled_vec
             grad_2 = grad_2_part_3.T.dot(grad_2_part_1.dot(grad_2_part_2))
@@ -192,13 +204,13 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
 noisy_error_history = [0] * num_epoch
 noiseless_error_history = [0] * num_epoch
 
-for k in range(20):
+for k in range(15):
     print("start training--------------")
     start_time = time.time()
 
     for i in range(20):
-        w1_without_noise, w2_without_noise, error_noiseless = train_convolutional_network(noise="None")
-        w1, w2, error_noisy = train_convolutional_network()
+        w1_without_noise, w2_without_noise, error_noiseless = train_convolutional_network(noise_="None")
+        w1, w2, error_noisy = train_convolutional_network(noise_= noise)
         noisy_error_history = [a + b for a, b in zip(noisy_error_history, error_noisy)]
         noiseless_error_history = [a + b for a, b in zip(noiseless_error_history, error_noiseless)]
     noisy_error_history = [a / 20 for a in noisy_error_history]
@@ -209,24 +221,6 @@ for k in range(20):
     plt.plot(range(1, num_epoch + 1), noisy_error_history, marker='', color='blue', label="Noisy")
     plt.plot(range(1, num_epoch + 1), noiseless_error_history, marker='', color='red', label="No Noise")
     plt.legend()
-    plt.savefig("epoch100_c=" + c_value[ind1]+"__d="+d_value[ind2]+"_" +str(k) + ".png")
+    plt.savefig("epoch100_c=" + str(c_value[ind1])+"__d="+ str(d_value[ind2]) +"_"+ "Noise="+ (sys.argv[4])+'__' +str(k) + ".png")
     plt.clf()
     # plt.show()
-
-'''
-# ----- Print Results ---
-# print("\nW1 :", w1, "\n\nw2 :", w2)
-print("----------------")
-error_with_noise = train_set_error_rate(w1_=w1, w2_=w2)
-error_no_noise = train_set_error_rate(w1_=w1_without_noise, w2_=w2_without_noise)
-
-print("error with noise: ", error_with_noise)
-print("error without noise: ", error_no_noise)
-
-print("----------------")
-# print("Start Out put : ", start_out)
-# print("Final Out put : ", final_out)
-# print("Ground Truth  : ", train_y.T)
-
-# -- end code --
-'''
