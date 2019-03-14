@@ -2,9 +2,11 @@ import numpy as np
 import time
 import math
 from scipy import signal
-import matplotlib.pyplot as plt
 import skimage.measure
-
+import matplotlib as mpl
+mpl.use('Agg')
+import sys
+import matplotlib.pyplot as plt
 
 # np.random.seed(13579)
 
@@ -80,6 +82,8 @@ train_y = indices_to_one_hot(train_y)
 train_size = 1000
 train_X = train_X[:train_size]
 train_y = train_y[:train_size]
+plt.ioff()
+
 
 # 0. Declare Weights
 w1 = np.random.randn(3, 3, 3) * 3
@@ -89,7 +93,9 @@ layer_1 = np.zeros((28, 28, 3))
 
 # 1. Declare hyper Parameters
 num_epoch = 100
-learning_rate = 0.3
+learning_rate = float(sys.argv[1])
+ind1 = int(sys.argv[2])
+ind2 = int(sys.argv[3])
 c_value = [0.2 * i for i in range(16)]
 d_value = list(range(1, 6))
 # cost_before_train = 0
@@ -118,8 +124,8 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
 
 def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="NEM noise",
                                 learning_rate_=learning_rate,
-                                num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,
-                                c=0.5, d=5):
+                                num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,        
+                 	c=c_value[ind1], d=d_value[ind2]):
     # ----- TRAINING -------
     error_list = []
     train_size_ = len(train_X)
@@ -186,7 +192,7 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise="
 noisy_error_history = [0] * num_epoch
 noiseless_error_history = [0] * num_epoch
 
-for k in range(10):
+for k in range(20):
     print("start training--------------")
     start_time = time.time()
 
@@ -203,7 +209,7 @@ for k in range(10):
     plt.plot(range(1, num_epoch + 1), noisy_error_history, marker='', color='blue', label="Noisy")
     plt.plot(range(1, num_epoch + 1), noiseless_error_history, marker='', color='red', label="No Noise")
     plt.legend()
-    plt.savefig("epoch100_" + str(k) + ".png")
+    plt.savefig("epoch100_c=" + c_value[ind1]+"__d="+d_value[ind2]+"_" +str(k) + ".png")
     plt.clf()
     # plt.show()
 
