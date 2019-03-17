@@ -87,8 +87,12 @@ train_X, train_y = mnist_data()
 train_X = train_X / 255
 train_y = indices_to_one_hot(train_y)
 train_size = 1000
+test_X = train_X[train_size:train_size*2+1]
+test_y = train_y[train_size:train_size*2+1]
+
 train_X = train_X[:train_size]
 train_y = train_y[:train_size]
+
 plt.ioff()
 
 # 0. Declare Weights
@@ -121,7 +125,7 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
     # ---- Cost after training ------
     for i in range(len(train_X_)):
         for j in range(number_mask):
-            layer_1[:, :, j] = signal.convolve2d(train_X[i], w1_[:, :, j], mode='same')
+            layer_1[:, :, j] = signal.convolve2d(train_X_[i], w1_[:, :, j], mode='same')
         layer_1_act = sigmoid(layer_1)
 
         layer_1_pooled = skimage.measure.block_reduce(layer_1_act, (2, 2, 1), func=np.max)
@@ -129,8 +133,8 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
 
         layer_2 = layer_1_pooled_vec.dot(w2_)
         layer_2_act = softmax(layer_2)
-        # if i % 100 == 0:
-        # print("different of the ", i, "th training sample:", np.round(layer_2_act - train_y[i], decimals=2), "   ")
+        # if i ==999:
+        #     print("different of the ", i, "th training sample:", np.round(layer_2_act - train_y[i], decimals=2), "   ")
         count_error += np.argmax(layer_2_act) != np.argmax(train_y_[i])
     error_rate = count_error / len(train_y_)
     return error_rate
@@ -205,7 +209,7 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise_=
             #     print("grad1  norm:",np.sum(grad_1), "       grad2 norm", np.sum(grad_2))
             w2_ = w2_ - grad_2 * learning_rate_
             w1_ = w1_ - grad_1 * learning_rate_
-        error_list.append(train_set_error_rate(w1_=w1_, w2_=w2_))
+        error_list.append(train_set_error_rate(w1_=w1_, w2_=w2_, train_X_ = test_X, train_y_= test_y))
 
     return w1_, w2_, error_list
 
