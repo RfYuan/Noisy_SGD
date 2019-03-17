@@ -235,7 +235,7 @@ for k in range(15):
     plt.plot(range(1, num_epoch + 1), noiseless_error_history, marker='', color='red', label="No Noise")
     plt.legend()
     plt.savefig(
-        "epoch100_c=" + str(c_value[ind1]) + "__d=" + str(d_value[ind2]) + "_" + "Noise=" + (sys.argv[4]) + '__' + str(
+        "epoch100_rate="+ str(learning_rate)+ '_c=' + str(c_value[ind1]) + "_d=" + str(d_value[ind2]) + "_" + "Noise=" + (sys.argv[4]) + '__' + str(
             k) + ".png")
     plt.clf()
     # plt.show()
