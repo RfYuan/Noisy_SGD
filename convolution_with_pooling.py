@@ -142,8 +142,8 @@ def train_set_error_rate(w1_=w1, w2_=w2, train_X_=train_X, train_y_=train_y, lay
 
 def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise_='None',
                                 learning_rate_=learning_rate,
-                                num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,
-                                c=c_value[ind1], d=d_value[ind2]):
+                                num_epoch_=num_epoch, w1_=w1, w2_=w2, layer_1=layer_1,                          
+				c= c_value[ind1], d= d_value[ind2]):
     # ----- TRAINING -------
     error_list = []
     train_size_ = len(train_X)
@@ -165,13 +165,13 @@ def train_convolutional_network(train_X=train_X, train_y=train_y.copy(), noise_=
             # adding noise
             new_y = train_y[i]
             if noise_ == "Uniform":
-                c_t_d = 0.5 * math.sqrt(c / ((i + 1 + train_size_ * r) ** d))
+                c_t_d = 0.5 * math.sqrt(c / ( (r+1) ** d))
                 uniform_noise = np.random.uniform(-c_t_d, c_t_d, (1, 10))
                 if uniform_noise.dot(np.log(layer_2_act).T) > 0:
                     new_y = train_y[i] + uniform_noise
                     # train_y[i] = train_y[i] + uniform_noise
             elif noise == "Gaussian":
-                variance = math.sqrt(c / ((i + 1 + train_size_ * r) ** d * 12))
+                variance = math.sqrt(c / ( (r+1) ** d * 12))
                 gaussian_noise = np.random.normal(0, variance, (1, 10))
                 if gaussian_noise.dot(np.log(layer_2_act).T) > 0:
                     new_y = train_y[i] + gaussian_noise
