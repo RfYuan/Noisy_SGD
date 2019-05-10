@@ -53,13 +53,16 @@ def get_model():
                                   activation='sigmoid'))
     model.add(keras.layers.MaxPool2D(pool_size=(2, 2), strides=2, padding='same'))
     model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(10, activation='softmax', use_bias=False))
+    model.add(keras.layers.Dense(10, activation='softmax', use_bias=True))
     return model
 
 
-def run_one(n, batch_=1, learning_rate = 0.01, c= 1, d= 3):
+def run_one(n, batch_=1, learning_rate=0.01, c=1, d=3):
     noisy_model = get_model()
     normal_model = get_model()
+    normal_model.set_weights(noisy_model.get_weights())
+
+
     noisy_history = []
     history = []
     sgd = keras.optimizers.SGD(lr=learning_rate, momentum=0.0, decay=0.0, nesterov=False)
@@ -73,7 +76,8 @@ def run_one(n, batch_=1, learning_rate = 0.01, c= 1, d= 3):
         history.append(normal_model.evaluate(x_test, y_test, verbose=0))
     return noisy_history, history
 
-def run_all( avg_num, num_epoch, learning_rate,c_value,d_value ):
+
+def run_all(avg_num, num_epoch, learning_rate, c_value, d_value):
     noisy_his = [0] * num_epoch
     normal_his = [0] * num_epoch
     start_time = time.time()
@@ -98,12 +102,12 @@ def run_all( avg_num, num_epoch, learning_rate,c_value,d_value ):
 c_value = 1
 d_value = 2
 num_epoch = 50
-avg_num = 2
-learning_rate = 0.01
-#run_all(avg_num=avg_num,num_epoch=num_epoch,learning_rate=learning_rate,c_value=c_value,d_value=d_value)
+avg_num = 15
+learning_rate = 0.05
+run_all(avg_num=avg_num, num_epoch=num_epoch, learning_rate=learning_rate, c_value=c_value, d_value=d_value)
+'''
 
-for c in [a*0.2 for a in range(4,7)]:
-    for d in range(2,4):
-        run_all(avg_num=avg_num,num_epoch=num_epoch,learning_rate=learning_rate,c_value=c_value,d_value=d_value)
-
-
+for c in [a * 0.2 for a in range(4, 7)]:
+    for d in range(2, 4):
+        run_all(avg_num=avg_num, num_epoch=num_epoch, learning_rate=learning_rate, c_value=c, d_value=d)
+'''
