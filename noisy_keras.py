@@ -47,21 +47,33 @@ def custom_loss(ep, c, d, batch=1):
     return noisy_loss
 
 
+def get_lenet_model():
+    model = keras.models.Sequential()
+    model.add(keras.layers.Conv2D(input_shape=(28, 28, 1), filters=32, kernel_size=5, activation='relu', padding='same',
+                                  name='Conv-1'))
+    model.add(keras.layers.MaxPool2D(pool_size=2, name='Pool-1'))
+    model.add(keras.layers.Conv2D(filters=64, kernel_size=3, activation='relu', padding='same', name='Conv-2'))
+    model.add(keras.layers.MaxPool2D(pool_size=2, name='Pool-2'))
+    model.add(keras.layers.Flatten(name='Flatten'))
+    model.add(keras.layers.Dense(units=512, activation='relu', name='Dense'))
+    model.add(keras.layers.Dense(units=10, activation='softmax', name='Softmax'))
+    return model
+
+
 def get_model():
     model = Sequential()
     model.add(keras.layers.Conv2D(input_shape=(28, 28, 1), kernel_size=(3, 3), filters=3, padding='same',
                                   activation='sigmoid'))
     model.add(keras.layers.MaxPool2D(pool_size=(2, 2), strides=2, padding='same'))
     model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(10, activation='softmax', use_bias=True))
+    model.add(keras.layers.Dense(10, activation='softmax', use_bias=False))
     return model
 
 
 def run_one(n, batch_=1, learning_rate=0.01, c=1, d=3):
-    noisy_model = get_model()
-    normal_model = get_model()
+    noisy_model, normal_model = get_model(), get_model()
+    # noisy_model, normal_model = get_lenet_model(),get_lenet_model()
     normal_model.set_weights(noisy_model.get_weights())
-
 
     noisy_history = []
     history = []
@@ -99,15 +111,15 @@ def run_all(avg_num, num_epoch, learning_rate, c_value, d_value):
     plt.clf()
 
 
-c_value = 1
+c_value = 0.8
 d_value = 2
 num_epoch = 50
 avg_num = 15
-learning_rate = 0.05
+learning_rate = 0.01
+# lenet = get_lenet_model()
+# lenet.summary()
 run_all(avg_num=avg_num, num_epoch=num_epoch, learning_rate=learning_rate, c_value=c_value, d_value=d_value)
-'''
-
-for c in [a * 0.2 for a in range(4, 7)]:
-    for d in range(2, 4):
-        run_all(avg_num=avg_num, num_epoch=num_epoch, learning_rate=learning_rate, c_value=c, d_value=d)
-'''
+#
+# for c in [a * 0.2 for a in range(2, 5)]:
+#     for d in range(2, 4):
+#         run_all(avg_num=avg_num, num_epoch=num_epoch, learning_rate=learning_rate, c_value=c, d_value=d)
